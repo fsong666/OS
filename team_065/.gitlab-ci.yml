@@ -1,0 +1,54 @@
+image: yastefan/bs-ci:latest
+
+stages:
+- build
+- run
+
+build:
+  tags:
+    - fai
+  stage: build
+  allow_failure: false
+  when: always
+  artifacts:
+    untracked: true
+    paths:
+    - 11R_IPC_threads_server
+  script:
+  - cd 11R_IPC_threads_server
+  - rm -rf build && mkdir build && cd build && cmake ..
+  - make
+
+run-test:
+  tags:
+    - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  artifacts:
+    untracked: true
+    paths:
+    - 11R_IPC_threads_server
+    when: always
+  dependencies:
+  - build
+  script:
+  - cd 11R_IPC_threads_server/build
+  - ./myGroup-server > /dev/null 2>&1 & sleep 1; echo -e '\n\n\n\n\n\n\n\n\n\n\n\n' | ../ressources/myGroup-test-client 2>&1 | grep -v '^stty' | sed 's/stty.*device//'
+
+run-benchmark:
+  tags:
+    - fai
+  stage: run
+  allow_failure: false
+  when: on_success
+  artifacts:
+    untracked: true
+    paths:
+    - 11R_IPC_threads_server
+    when: always
+  dependencies:
+  - build
+  script:
+  - cd 11R_IPC_threads_server/build
+  - ./myGroup-server > /dev/null 2>&1 & sleep 1; ../ressources/myGroup-benchmark
